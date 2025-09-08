@@ -1,0 +1,8 @@
+# prod or local
+env: "local" 
+storage_path: "./storage/sso.db"
+token_ttl: "1h" # Время жизни токена
+grpc:
+  port: 44044
+  timeout: 5h # для тестов поставил 5 часов, для прода 5s
+
