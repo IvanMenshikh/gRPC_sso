@@ -1,8 +1,10 @@
-package grpc
+package grpcapp
 
 import (
+	"fmt"
 	authgrpc "gRPC_sso/sso/internal/grpc/auth"
 	"log/slog"
+	"net"
 
 	"google.golang.org/grpc"
 )
@@ -22,4 +24,43 @@ func New(log *slog.Logger, port int) *App {
 		gRPCServer: gPRCServer,
 		port:       port,
 	}
+}
+
+// Запуск приложения с паникой в случае ошибки
+func (a *App) MustRun() {
+	if err := a.Run(); err != nil {
+		panic(err)
+	}
+}
+
+// Функция запуска gRPC сервера
+func (a *App) Run() error {
+	const op = "grpcapp.Run"
+
+	log := a.log.With(
+		slog.String("op", op),
+		slog.Int("port", a.port),
+	)
+
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", a.port))
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("gRPC server is running", slog.String("addr", l.Addr().String()))
+
+	if err := a.gRPCServer.Serve(l); err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	return nil
+}
+
+// Остановка приложения (graceful showtdown)
+func (a *App) Stop() {
+	const op = "grpcapp.Stop"
+
+	a.log.With(slog.String("op", op)).
+		Info("stopping gRPC server")
+
+	a.gRPCServer.GracefulStop()
 }
